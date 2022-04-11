@@ -34,7 +34,7 @@ const MessageSender = () => {
             axios.post('/upload/image', imgForm, {
                 headers: {
                     'accept': 'application/json',
-                    'Accept-Language': 'en-US,en;q=0.8',
+                    'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3',
                     'Content-Type': `multipart/form-data; boundary=${imgForm._boundary}`,
                 }
             }).then(res => {
@@ -42,7 +42,7 @@ const MessageSender = () => {
 
                 const postData = {
                     text: input,
-                    imgName: res.data.fileName,
+                    imgName: res.data.filename,
                     user: user.displayName,
                     avatar: user.photoURL,
                     timestamp: Date.now()
@@ -68,8 +68,8 @@ const MessageSender = () => {
 
     const savePost = async (postData) => {
         await axios.post('/upload/post', postData)
-            .then(res => {
-                console.log(res)
+            .then(resp => {
+                console.log(resp)
             })
     }
 

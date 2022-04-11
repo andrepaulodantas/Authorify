@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const postModel = mongoose.Schema({
+const postModel = new mongoose.Schema({
     user: String,
     imgName: String,
     text: String,
@@ -8,4 +8,4 @@ const postModel = mongoose.Schema({
     timestamp: String
 });
 
-export default mongoose.model('posts', postModel);
+module.exports  =  mongoose.model("posts", postModel)

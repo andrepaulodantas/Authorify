@@ -8,17 +8,28 @@ import Pusher from 'pusher-js'
 
 import db from '../firebase'
 
+const pusher = new Pusher('6bcabaee92f3e67baee2', {
+    cluster: 'sa1'
+  });
+
 const Feed = () => {
     const [profilePic, setProfilePic] = useState('')
     const [postsData, setPostsData] = useState([])
 
     const syncFeed = () => {
         axios.get('/retrieve/posts')
-            .then(response => {
-                console.log(response.data)
-                setPostsData(response.data)
+            .then((res) => {
+                console.log(res.data)
+                setPostsData(res.data)
             })
         }
+    
+    useEffect(() => {
+        const channel = pusher.subscribe('posts');
+        channel.bind('inserted', function(data) {
+          syncFeed()
+        });
+    }, [])        
 
     useEffect(() => {
         syncFeed()

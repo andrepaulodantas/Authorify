@@ -7,7 +7,7 @@ const Grid = require('gridfs-stream');
 const {GridFsStorage} = require('multer-gridfs-storage');
 const path = require('path');
 const Pusher = require('pusher');
-const connectDB = require('./config/db');
+//const connectDB = require('./config/db');
 
 const facePosts = require('./models/facePosts');
 
@@ -18,68 +18,78 @@ Grid.mongo = mongoose.mongo;
 
 const app = express();
 
+const pusher = new Pusher({
+  appId: "1383515",
+  key: "6bcabaee92f3e67baee2",
+  secret: "fae1664d9b93bbb344bd",
+  cluster: "sa1",
+  useTLS: true
+});
+
 // Connect Database
 const mongoURI = "mongodb+srv://authorify:Authorify@cluster0.4z22m.mongodb.net/Cluster0?retryWrites=true&w=majority"
 
-const conn = mongoose.createConnection(mongoURI, {
+const conn = mongoose.createConnection(mongoURI);
+
+mongoose.connection.once('open', () => {
+  console.log('Connected to MongoDB');
+
+  const changeStream = mongoose.connection.collection('posts').watch();
+
+  changeStream.on('change', (change) => {
+    console.log(change);
+    if (change.operationType === 'insert') {
+      pusher.trigger('posts', 'inserted', {
+        change: change        
+      })
+      } else {
+        console.log('Error in change stream');
+      }
+  });
+})
    
-    }, err => {
-        if(err) throw err;
-        });
-
-    mongoose.connect(mongoURI,
-      {           
-      }, err => {
-        if(err) throw err;
-        }); 
-
-    mongoose.connection.once('open', () => {
-        console.log('MongoDB is Connected...');
-  });  
-
-     let gfs
+     let gfs;
     
-    conn.once('open', () => {
-      console.log('Connected to MongoDB');
+    conn.once("open", () => {
+      console.log("Connected to MongoDB");
       gfs = Grid(conn.db, mongoose.mongo);
-      gfs.collection('images');
+      gfs.collection("images");
     });
     
-    // create storage engine
+  // Create storage engine
     const storage = new GridFsStorage({
-      url: mongoURI,
-      file: (req, file) => {
-        return new Promise((resolve, reject) => {
-         
-            const filename = `image-${Date.now()}${path.extname(file.originalname)}`;
-            const fileInfo = {
-              filename: filename,
-              bucketName: 'images'
-            };
-            resolve(fileInfo);
-          });      
-       }
-    });
+    url: mongoURI,
+    file: (req, file) => {
+      return new Promise((resolve, reject) => {
+        const filename=`image-${Date.now()}${path.extname(file.originalname)}`
+          const fileInfo = {
+            filename: filename,
+            bucketName: "images"
+          };
+          resolve(fileInfo);
+      });
+    }
+  });
 
     const upload = multer({ storage });
+
+    mongoose.connect(mongoURI); 
 
 // cors
 app.use(cors({ origin: true, credentials: true }));
 
 // Init Middleware
-app.use(express.json({ extended: false }));
+app.use(express.json());
 app.use(cors());
+app.use(bodyParser.json());
+app.set('view engine', 'ejs');
 
 // use Routes
-app.get('/', (req, res) => res.status(200).send('Hello world!'));
+app.get("/", (req, res) => res.status(200).send("<h1>Hi Programmers!!!</h1>"));
 
-app.post('/upload/image', upload.single('file'), (req, res) => {
-    res.status(201).send(req.file);
-});
-
-app.post('/upload/post', (req, res) => {
-    const dbPost = req.body
-
+app.post("/upload/post", (req, res) => {
+    const dbPost = req.body;
+    console.log(dbPost);
     facePosts.create(dbPost, (err, data) => {
         if (err) {
             res.status(500).send(err)
@@ -89,13 +99,32 @@ app.post('/upload/post', (req, res) => {
     })
 })
 
-app.get('/retrieve/image/single',(req, res) => {
-    gfs.files.findOne({filename: req.query.filename}, (err, file) => {
+app.get("/retrieve/posts", (req, res) => {
+	facePosts.find((err, data) => {
+		if (err) {
+			res.status(500).send(err);
+		} else {
+			data.sort((b, a) => {
+				return a.timestamp - b.timestamp;
+			});
+
+			res.status(200).send(data);
+		}
+	});
+});
+
+app.post("/upload/image", upload.single("file"), (req, res) => {
+    res.status(201).send(req.file);
+});
+
+
+app.get("/retrieve/image/single",  (req, res) => { 
+    gfs.files.findOne({filename: req.query.name}, (err, file) => {
           if(err) {
             res.status(500).send(err);
             }else{            
             if(!file || file.length === 0) {   // if(!file)
-                res.status(404).send('No file found');
+                res.status(404).json({err: 'No file found'});
             }else{
                 const readstream = gfs.createReadStream(file.filename);
                 readstream.pipe(res);
@@ -103,20 +132,6 @@ app.get('/retrieve/image/single',(req, res) => {
         }
     });
 });
-
-app.get('/retrieve/posts', (req, res) => {
-    facePosts.find({}, (err, data) => {
-        if (err) {
-            res.status(500).send(err)
-        } else {
-            data.sort((b, a) => {
-                return a.timestamp - b.timestamp;
-            });
-            res.status(200).send(data)
-        }
-    })
-})
-               
 
 //listen
 const port = process.env.PORT || 8082;
