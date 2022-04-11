@@ -1,6 +1,6 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-First you need to install the dependencies in the Authorify folder and in the facebook folder, , you can run: ### `npm install`
+First you need to install the dependencies in the Authorify folder and in the facebook folder, you can run: ### `npm install`
 
 ## Available Scripts
 
