@@ -12,7 +12,6 @@ const Pusher = require('pusher');
 const facePosts = require('./models/facePosts');
 
 // routes
-//const books = require('./routes/api/books');
 
 Grid.mongo = mongoose.mongo;
 
