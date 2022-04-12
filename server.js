@@ -26,7 +26,7 @@ const pusher = new Pusher({
 });
 
 // Connect Database
-const mongoURI = "mongodb+srv://authorify:Authorify@cluster0.4z22m.mongodb.net/Cluster0?retryWrites=true&w=majority"
+const mongoURI = ""
 
 const conn = mongoose.createConnection(mongoURI);
 
